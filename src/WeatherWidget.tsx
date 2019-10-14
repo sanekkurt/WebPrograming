@@ -9,48 +9,11 @@ import {
 import { debounce } from "ts-debounce";
 
 // Процедура выполнения и обработки результатов запроса на внешний ресурс
-const fetchData = async (
-  currency: string,
-  setTemp: (t: number) => void,
-  setPrevious: (t: number) => void,
-  setName: (t: string) => void,
-  setError: (t: string) => void
-) => {
-  if (currency.length < 3) return;
-  // TODO обработка ошибок при выполнении запроса
-  // TODO сделать индикатор выполнения запроса
-
-  const url = `https://www.cbr-xml-daily.ru/daily_json.js`;
-  const response = await fetch(url);
-  const data = await response.json();
-  console.log(data);
-  var temp = 0;
-  var previous = 0;
-  var name = "-";
-  var error = undefined;
-  if (data["Valute"][currency] === undefined) {
-    temp = undefined;
-    previous = undefined;
-    name = undefined;
-    error = "Введите верную валюту";
-  } else {
-    temp = data["Valute"][currency]["Value"];
-    previous = data["Valute"][currency]["Previous"];
-    name = data["Valute"][currency]["Name"];
-    error = undefined;
-  }
-
-  setTemp(temp);
-  setPrevious(previous);
-  setName(name);
-  setError(error);
-};
-
-const debouncedFetchData = debounce(fetchData, 500);
 
 const WeatherWidget = () => {
   // Название валюты
   const [currency, setCurrency] = React.useState<string>(null);
+  const [isLoading, setIsLoading] = React.useState<boolean>(null);
   // Температура
   const [temp, setTemp] = React.useState<number>(null);
 
@@ -60,8 +23,46 @@ const WeatherWidget = () => {
 
   const [error, setError] = React.useState<string>(null);
 
+  const debouncedFetchData = React.useMemo(
+    () =>
+      debounce(async (currency: string) => {
+        if (currency.length < 3) return;
+        // TODO обработка ошибок при выполнении запроса
+        // TODO сделать индикатор выполнения запроса
+        try {
+          const url = `https://www.cbr-xml-daily.ru/daily_json.js`;
+          const response = await fetch(url);
+          const data = await response.json();
+          console.log(data);
+          var temp = 0;
+          var previous = 0;
+          var name = "-";
+          var error = undefined;
+          if (data["Valute"][currency] === undefined) {
+            temp = undefined;
+            previous = undefined;
+            name = undefined;
+            error = "Введите верную валюту";
+          } else {
+            temp = data["Valute"][currency]["Value"];
+            previous = data["Valute"][currency]["Previous"];
+            name = data["Valute"][currency]["Name"];
+            error = undefined;
+          }
+
+          setTemp(temp);
+          setPrevious(previous);
+          setName(name);
+          setError(error);
+        } finally {
+          setIsLoading(false);
+        }
+      }, 500),
+    []
+  );
+
   React.useEffect(() => {
-    debouncedFetchData(currency, setTemp, setPrevious, setName, setError);
+    debouncedFetchData(currency);
   }, [currency]); // При изменении названия валюты вызывается функция-эффект
 
   return (
@@ -71,8 +72,12 @@ const WeatherWidget = () => {
         <TextField
           label="Название валюты"
           value={currency || ""}
-          onChange={e => setCurrency(e.target.value)}
+          onChange={e => {
+            setIsLoading(true);
+            setCurrency(e.target.value);
+          }}
         />
+        {isLoading && <h2>Loading...</h2>}
         <p />
         <Typography variant="h6">Цена: {temp}</Typography>
         <p />
