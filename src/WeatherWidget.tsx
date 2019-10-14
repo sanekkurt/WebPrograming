@@ -9,7 +9,12 @@ import {
 import { debounce } from "ts-debounce";
 
 // Процедура выполнения и обработки результатов запроса на внешний ресурс
-const fetchData = async (currency: string, setTemp: (t: number) => void) => {
+const fetchData = async (
+  currency: string,
+  setTemp: (t: number) => void,
+  setPrevious: (t: number) => void,
+  setName: (t: string) => void
+) => {
   if (currency.length < 3) return;
   // TODO выбрать любой api-сервис и заменить код запроса и обработки ответа
   // TODO обработка ошибок при выполнении запроса
@@ -20,7 +25,10 @@ const fetchData = async (currency: string, setTemp: (t: number) => void) => {
   const data = await response.json();
   const temp = data["Valute"][currency]["Value"];
   const previous = data["Valute"][currency]["Previous"];
+  const name = data["Valute"][currency]["Name"];
   setTemp(temp);
+  setPrevious(previous);
+  setName(name);
 };
 
 const debouncedFetchData = debounce(fetchData, 500);
@@ -33,8 +41,10 @@ const WeatherWidget = () => {
 
   const [previous, setPrevious] = React.useState<number>(null);
 
+  const [name, setName] = React.useState<string>(null);
+
   React.useEffect(() => {
-    debouncedFetchData(currency, setTemp);
+    debouncedFetchData(currency, setTemp, setPrevious, setName);
   }, [currency]); // При изменении названия валюты вызывается функция-эффект
 
   return (
@@ -50,6 +60,8 @@ const WeatherWidget = () => {
         <Typography variant="h6">Цена: {temp}</Typography>
         <p />
         <Typography variant="h6">Старая цена: {previous}</Typography>
+        <p />
+        <Typography variant="h6">Имя валюты: {name}</Typography>
       </CardContent>
     </Card>
   );
