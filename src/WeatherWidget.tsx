@@ -26,7 +26,11 @@ const WeatherWidget = () => {
   const debouncedFetchData = React.useMemo(
     () =>
       debounce(async (currency: string) => {
-        if (currency.length < 3) return;
+        if (currency.length < 3) {
+          setIsLoading(false);
+          return;
+        }
+
         // TODO обработка ошибок при выполнении запроса
         // TODO сделать индикатор выполнения запроса
         try {
