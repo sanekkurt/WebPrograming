@@ -9,7 +9,7 @@ import {
 import { debounce } from "ts-debounce";
 
 // Процедура выполнения и обработки результатов запроса на внешний ресурс
-const fetchData = async (currency: string, setPrevious:(t: number) => void), setTemp: (t: number) => void) => {
+const fetchData = async (currency: string, setTemp: (t: number) => void) => {
   if (currency.length < 3) return;
   // TODO выбрать любой api-сервис и заменить код запроса и обработки ответа
   // TODO обработка ошибок при выполнении запроса
@@ -21,7 +21,6 @@ const fetchData = async (currency: string, setPrevious:(t: number) => void), set
   const temp = data["Valute"][currency]["Value"];
   const previous = data["Valute"][currency]["Previous"];
   setTemp(temp);
-  setPrevious(previous);
 };
 
 const debouncedFetchData = debounce(fetchData, 500);
@@ -35,7 +34,7 @@ const WeatherWidget = () => {
   const [previous, setPrevious] = React.useState<number>(null);
 
   React.useEffect(() => {
-    debouncedFetchData(currency, setPrevious, setTemp);
+    debouncedFetchData(currency, setTemp);
   }, [currency]); // При изменении названия валюты вызывается функция-эффект
 
   return (
